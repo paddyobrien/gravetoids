@@ -1,13 +1,3 @@
-var things = ["blah", "test", "bannana", "biscuit", "horse"];
-
-var printOut = function(element, index, array){
-	console.log(index);
-};
-
-things.forEach(printOut);
-
-
-
 
 var Game = (function() {
 	var Game = {};
@@ -37,10 +27,10 @@ var Game = (function() {
 	var drawLoop;
 
 	Game.init = function init(map) {
-		level = map;
+		level = map.levels.shift();
 		ship = new Ship(map.ship);
 		ship.loadImage();
-		waypoints = map.waypoints.slice(0);
+		
 		// attach key listeners
 		document.addEventListener('keydown', keydownhandler);
 		document.addEventListener('keyup', keyuphandler);
@@ -50,12 +40,7 @@ var Game = (function() {
 		ctx = canvas.getContext('2d');
 		// scale to full window
 		scaleCanvas();
-		// create the planets
-		map.planets.forEach(createPlanet);
-		// draw gravity overlay and store in
-		drawGrav(ctx);
-		// clear the screen
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		loadLevel(level);
 		// set the frame handler to fire at 60fps
 		logicLoop = setInterval(updateWorld, 1000/60);
 		drawLoop = setInterval(draw, 1000/30);
@@ -74,6 +59,16 @@ var Game = (function() {
 		waypoints = level.waypoints.slice(0);
 		logicLoop = setInterval(updateWorld, 1000/60);
 		drawLoop = setInterval(draw, 1000/30);
+	};
+
+	var loadLevel = function(level) {
+		waypoints = level.waypoints.slice(0);
+		// create the planets
+		level.planets.forEach(createPlanet);
+		// draw gravity overlay and store in
+		drawGrav(ctx);
+		// clear the screen
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
 	};
 
 	var stop = function(msg) {
@@ -117,17 +112,58 @@ var Game = (function() {
 
 	// draw a frame
 	var draw = function() {
+		var offset = calculateViewOffset(ship);
 		// clear the screen
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.putImageData(gravityMap, 0, 0);
+		//ctx.putImageData(gravityMap, offset.x * -1, offset.y * - 1);
 		// draw the planet
 		planets.forEach(function(planet) {
-			planet.drawimage(ctx);
+			planet.drawimage(ctx, offset);
 		});
 		// draw the ship
-		ship.drawimage(ctx);
+		ship.drawimage(ctx, offset);
+		var future = peek();
+		while (future.length > 0)
+		{
+			var point = future.shift();
+			ctx.fillStyle = "red";
+			ctx.fillRect(point.x - offset.x, point.y - offset.y, 1, 1);
+		}
 		drawCounters(ship);
-		drawWaypoint();
+		drawWaypoint(offset);
+	};
+
+	var peek = function() {
+		if (!ship.launched) return [];
+		var oldVel = {}, oldLoc = {};
+		oldVel.m = ship.velocity.m;
+		oldVel.d = ship.velocity.d;
+		oldLoc.x = ship.location.x;
+		oldLoc.y = ship.location.y;
+		var futureCoords = [];
+			console.log(oldVel);
+		for (var j = 0; j < 1000; j++)
+		{
+			var gravity = {m: 0, d: 0};
+			for (var i = 0; i < planets.length; i++) {
+				gravity = addVectors(
+					gravity,
+					planets[i].calculateGravity(ship.location, ship.mass)
+				);
+			}
+			ship.applyForce(gravity);
+			ship.move();
+			futureCoords.push({x: ship.location.x, y: ship.location.y});
+		}
+		ship.location.x = oldLoc.x;
+		ship.location.y = oldLoc.y;
+		ship.velocity.m = oldVel.m;
+		ship.velocity.d = oldVel.d;
+		return futureCoords;
+	};
+
+	var calculateViewOffset = function(ship) {
+		return {x: ship.location.x - Game.getWidth() / 2, y: ship.location.y - Game.getHeight() / 2};
 	};
 
 	var drawGrav = function(ctx) {
@@ -189,17 +225,22 @@ var Game = (function() {
 		ctx.textAlign = 'left';
 	};
 
-	var drawWaypoint = function() {
-		
+	var drawWaypoint = function(offset) {
+		var xpos = waypoints[0].x - offset.x;
+		var ypos = waypoints[0].y - offset.y;
+		xpos = (xpos >= 0) ? xpos : 10;
+		xpos = (xpos <= Game.getWidth()) ? xpos : Game.getWidth() - 10;
+		ypos = (ypos >= 0) ? ypos : 10;
+		ypos = (ypos <= Game.getHeight()) ? ypos : Game.getHeight() - 10;
 		ctx.fillStyle = "white";
-		ctx.fillRect( waypoints[0].x -4, waypoints[0].y-15, 19, 20 );
+		ctx.fillRect( xpos - 4, ypos - 15, 19, 20 );
 		ctx.font = "bold 16px sans-serif";
 		ctx.fillStyle = 'green';
 		var number = waypoints.length;
 		if (number === 0) {
 			number = 1;
 		}
-		ctx.fillText(number.toString(), waypoints[0].x, waypoints[0].y);
+		ctx.fillText(number.toString(), xpos, ypos);
 	};
 
 	var calculateWaypoint = function(ship) {
@@ -208,6 +249,7 @@ var Game = (function() {
 			ship.fuel += waypoint.fuel;
 			waypoints.shift();
 			if(waypoints.length === 0) {
+				document.addEventListener('keyup', keyuphandler);
 				stop("You Win. Press n for next level");
 			}
 		}
@@ -223,6 +265,7 @@ var Game = (function() {
 	};
 	// registers keys as not down, actual interaction happens during the frame
 	var keyuphandler = function(e) {
+		console.log(e.keyCode);
 		if (e.keyCode == 39) keysdown.right = false;
 		if (e.keyCode == 37) keysdown.left = false;
 		if (e.keyCode == 38) keysdown.up = false;

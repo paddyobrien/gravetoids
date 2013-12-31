@@ -53,12 +53,12 @@ var Planet = function(xpos, ypos, radius, mass, sprite) {
 			};
 		},
 		// Draw the planet at it's current location
-		drawimage: function(ctx) {
+		drawimage: function(ctx, offset) {
 			if (!this.image) {
 				this.image = new Image();
 				this.image.src = this.sprite;
 			}
-			ctx.drawImage(this.image, this.location.x - (this.radius), this.location.y - this.radius);
+			ctx.drawImage(this.image, this.location.x - (this.radius) - offset.x, this.location.y - this.radius - offset.y);
 		}
 	};
 };

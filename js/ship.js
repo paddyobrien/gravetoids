@@ -10,7 +10,7 @@ var Ship = function Ship(opts) {
 		boostersound: new Audio(opts.engine),
 		launched: false,
 		// the current locaiton of ship
-		location: {x:50, y: 500},
+		location: {x: 0, y: 0},
 		// the current velocity vector
 		velocity: {m: 0, d: 0},
 		// the current thrust vector
@@ -47,21 +47,11 @@ var Ship = function Ship(opts) {
 		},
 
 		// Draw the ship in it's current location in the provided context
-		drawimage: function(ctx) {
+		drawimage: function(ctx, offset) {
 			var x = this.location.x, y = this.location.y;
 			ctx.save();
-			if (x < 0) {
-				x = 0;
-			}
-			if(y < 0) {
-				y = 0;
-			}
-			if (x > Game.getWidth()) {
-				x = Game.getWidth();
-			}
-			if (y > Game.getHeight()) {
-				y = Game.getHeight();
-			}
+			x = x - offset.x;
+			y = y - offset.y;
 			ctx.translate(x, y);
 
 			ctx.rotate((Math.PI / 180) * this.bearing);
@@ -174,6 +164,25 @@ var Ship = function Ship(opts) {
 			if (!this.launched && this.thrust.m > 0) {
 				this.launched = true;
 			}
+		},
+		peek: function(keysDown) {
+			if (!this.launched) return;
+			var oldVel = {}, oldLoc = {};
+			oldVel.x = this.velocity.x;
+			oldVel.y = this.velocity.y;
+			oldLoc.x = this.location.x;
+			oldLoc.y = this.location.y;
+			var futureCoords = [];
+			for(var i = 0; i < 1000; i++) {
+				
+				this.move();
+				futureCoords.push({x: this.location.x, y: this.location.y});
+			}
+			this.location.x = oldLoc.x;
+			this.location.y = oldLoc.y;
+			this.velocity.x = oldVel.x;
+			this.velocity.y = oldVel.y;
+			return futureCoords;
 		}
 	};
 };
