@@ -1,0 +1,11 @@
+/tmp
+/dist
+/docs
+/node_modules
+/bower_components
+/vendor/*
+.DS_Store
+Thumbs.db
+.bower
+*.orig
+.tmp

@@ -1,0 +1,19 @@
+<canvas></canvas>
+{{#if ctx}}
+  {{#each planet in planets}}
+    {{planet-sprite
+      xpos=planet.location.x
+      ypos=planet.location.y
+      radius=planet.radius
+      mass=planet.mass
+      sprite=planet.image
+      canvas=ctx
+      tick=clock.tick 
+    }}
+  {{/each}}
+  {{#ship-sprite options=ship canvas=ctx tick=clock.tick keymap=keymap}}
+    <div style="position:absolute; top: 0; left: 0;color: white">Velocity: {{round-number view.velocity.m}}</div>
+    <div style="position:absolute; top: 0; left: 100px;color: white">Thrust: {{round-number view.thrust.m}}</div>
+    <div style="position:absolute; top: 0; left: 200px;color: white">Fuel: {{round-number view.fuel}}</div>
+  {{/ship-sprite}}
+{{/if}}

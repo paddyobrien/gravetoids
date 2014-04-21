@@ -1,6 +1,3 @@
-
-
-
 var Ship = function Ship(opts) {
 	return {
 		sprite: opts.sprite,
@@ -174,7 +171,6 @@ var Ship = function Ship(opts) {
 			oldLoc.y = this.location.y;
 			var futureCoords = [];
 			for(var i = 0; i < 1000; i++) {
-				
 				this.move();
 				futureCoords.push({x: this.location.x, y: this.location.y});
 			}
